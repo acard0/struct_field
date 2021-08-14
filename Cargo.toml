@@ -1,0 +1,20 @@
+[package]
+authors = ["rise0chen <rise0chen@163.com>"]
+categories = ["rust-patterns"]
+description = "Derive macros for generating each field in a struct"
+documentation = "https://docs.rs/struct_field"
+edition = "2018"
+keywords = ["struct", "field"]
+license = "MIT"
+name = "struct_field"
+readme = "README.md"
+repository = "https://github.com/rise0chen/struct_field"
+version = "0.1.0"
+
+[dependencies]
+proc-macro2 = "1.0"
+quote = "1.0"
+syn = "1.0"
+
+[lib]
+proc-macro = true
