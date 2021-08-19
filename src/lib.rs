@@ -18,6 +18,12 @@ pub fn derive_field(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
             #ident(#ty)
         }
     });
+    let _field_name = fields.iter().map(|(_vis, ident, _ty)| {
+        let ident_name = ident.to_string();
+        quote! {
+            #_field_enum_ident::#ident(_) => #ident_name
+        }
+    });
 
     let _update_branch = fields.iter().map(|(_vis, ident, _ty)| {
         quote! {
@@ -40,6 +46,15 @@ pub fn derive_field(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
             #where_clause
         {
             #(#_field_enum_var),*
+        }
+        impl #impl_generics #_field_enum_ident #ty_generics
+            #where_clause
+        {
+            pub fn name(&self) -> &'static str {
+                match self {
+                    #(#_field_name,)*
+                }
+            }
         }
 
         impl #impl_generics #ty #ty_generics

@@ -10,6 +10,7 @@ fn test_field() {
     }
     let mut o = Struct { field: String::new() };
     o.update_field(StructField::field(String::from("3")));
+    assert_eq!(StructField::field(String::new()).name(), Struct::FIELD_NAMES.field);
     if let Some(StructField::field(field)) = o.fetch_field(Struct::FIELD_NAMES.field) {
         assert_eq!(field, "3");
     } else {
