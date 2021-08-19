@@ -1,15 +1,21 @@
 use struct_field::StructField;
+use struct_field_names::StructFieldNames;
 
 #[test]
 fn test_field() {
     #[allow(dead_code)]
-    #[derive(StructField)]
+    #[derive(StructField, StructFieldNames)]
     struct Struct {
-        field: i32,
+        field: String,
     }
-    let mut o = Struct { field: 0 };
-    o.update_field(StructField::field(3));
-    assert_eq!(o.field, 3);
+    let mut o = Struct { field: String::new() };
+    o.update_field(StructField::field(String::from("3")));
+    if let Some(StructField::field(field)) = o.fetch_field(Struct::FIELD_NAMES.field) {
+        assert_eq!(field, "3");
+    } else {
+        unreachable!();
+    }
+    assert_eq!(o.field, "3");
 }
 
 #[test]
@@ -23,6 +29,11 @@ fn test_with_generic_struct() {
     let i2 = 2u8;
     let mut o: Struct<u8> = Struct { field: &i1 };
     o.update_field(StructField::field(&i2));
+    if let Some(StructField::field(field)) = o.fetch_field("field") {
+        assert_eq!(field, &i2);
+    } else {
+        unreachable!();
+    }
     assert_eq!(o.field, &i2);
 }
 
@@ -40,6 +51,11 @@ fn not_a_test_skip_attribute() {
         field_two: 2,
     };
     o.update_field(StructField::field_one(3));
+    if let Some(StructField::field_one(field)) = o.fetch_field("field_one") {
+        assert_eq!(field, 3);
+    } else {
+        unreachable!();
+    }
     assert_eq!(o.field_one, 3);
     // Uncommenting the line below should produce an error.
     //o.update_field(StructField::field_two(4));

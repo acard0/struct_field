@@ -24,6 +24,12 @@ pub fn derive_field(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
             #_field_enum_ident::#ident(#ident) => self.#ident = #ident
         }
     });
+    let _fetch_branch = fields.iter().map(|(_vis, ident, _ty)| {
+        let ident_name = ident.to_string();
+        quote! {
+            #ident_name => Some(#_field_enum_ident::#ident(self.#ident.clone()))
+        }
+    });
 
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
 
@@ -42,6 +48,12 @@ pub fn derive_field(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
             pub fn update_field(&mut self, field: #_field_enum_ident #ty_generics){
                 match field {
                     #(#_update_branch),*
+                }
+            }
+            pub fn fetch_field(&mut self, field: &'static str) -> Option<#_field_enum_ident #ty_generics> {
+                match field {
+                    #(#_fetch_branch,)*
+                    _x => None,
                 }
             }
         }
