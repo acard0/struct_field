@@ -41,7 +41,7 @@ pub fn derive_field(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 
     let tokens = quote! {
         # [allow(non_camel_case_types)]
-        # [derive(Clone)]
+        # [derive(Debug, Clone)]
         #vis enum #_field_enum_ident #ty_generics
             #where_clause
         {
