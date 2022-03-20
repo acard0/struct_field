@@ -1,14 +1,32 @@
+use core::iter::FromIterator;
 use proc_macro2::{Ident, Span};
-use quote::quote;
+use quote::{quote, ToTokens};
 use syn::{Attribute, DeriveInput, Fields, Meta, NestedMeta, Type, Visibility};
 
 #[proc_macro_derive(StructField, attributes(struct_field))]
 pub fn derive_field(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
-    let ast: DeriveInput = syn::parse(input).unwrap();
-    let (vis, ty, generics) = (&ast.vis, &ast.ident, &ast.generics);
+    let DeriveInput {
+        attrs,
+        vis,
+        ident: ty,
+        generics,
+        data,
+        ..
+    } = syn::parse(input).unwrap();
+    let mut derives = Vec::new();
+    for attr in attrs.into_iter() {
+        if attr.path.is_ident("derive") {
+            derives.push(attr.into_token_stream());
+        }
+    }
+    let derive = if derives.is_empty() {
+        proc_macro2::TokenStream::new()
+    } else {
+        proc_macro2::TokenStream::from_iter(derives.into_iter())
+    };
     let _field_enum_ident = Ident::new(&(ty.to_string() + "Field"), Span::call_site());
 
-    let fields = filter_fields(match ast.data {
+    let fields = filter_fields(match data {
         syn::Data::Struct(ref s) => &s.fields,
         _ => panic!("Field can only be derived for structs"),
     });
@@ -41,7 +59,7 @@ pub fn derive_field(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 
     let tokens = quote! {
         # [allow(non_camel_case_types)]
-        # [derive(Debug, Clone)]
+        #derive
         #vis enum #_field_enum_ident #ty_generics
             #where_clause
         {

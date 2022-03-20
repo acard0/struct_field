@@ -3,16 +3,21 @@ use struct_field_names::StructFieldNames;
 
 #[test]
 fn test_field() {
+    #[rustfmt::skip::attributes(derive)]
     #[allow(dead_code)]
     #[derive(StructField, StructFieldNames)]
+    #[derive(Debug, Clone, PartialEq)]
     struct Struct {
         field: String,
     }
-    let mut o = Struct { field: String::new() };
-    o.update_field(StructField::field(String::from("3")));
-    assert_eq!(StructField::field(String::new()).name(), Struct::FIELD_NAMES.field);
-    if let Some(StructField::field(field)) = o.fetch_field(Struct::FIELD_NAMES.field) {
-        assert_eq!(field, "3");
+    let mut o = Struct {
+        field: String::new(),
+    };
+    let field = StructField::field(String::from("3"));
+    o.update_field(field.clone());
+    assert_eq!(field.name(), Struct::FIELD_NAMES.field);
+    if let Some(f) = o.fetch_field(Struct::FIELD_NAMES.field) {
+        assert_eq!(field, f);
     } else {
         unreachable!();
     }
