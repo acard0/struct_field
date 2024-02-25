@@ -1,7 +1,3 @@
-use core::iter::FromIterator;
-use proc_macro2::{Ident, Span};
-use quote::{quote, ToTokens};
-use syn::{Attribute, DeriveInput, Fields, Meta, NestedMeta, Type, Visibility};
 
 #[proc_macro_derive(StructField, attributes(struct_field))]
 pub fn derive_field(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
@@ -25,6 +21,8 @@ pub fn derive_field(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
         proc_macro2::TokenStream::from_iter(derives.into_iter())
     };
     let _field_enum_ident = Ident::new(&(ty.to_string() + "Field"), Span::call_site());
+    let _field_notifiable_trait_ident = Ident::new(&(ty.to_string() + "Notifiable"), Span::call_site());
+    let _field_change_struct_ident = Ident::new(&(ty.to_string() + "Change"), Span::call_site());
 
     let fields = filter_fields(match data {
         syn::Data::Struct(ref s) => &s.fields,
@@ -58,13 +56,35 @@ pub fn derive_field(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
 
     let tokens = quote! {
+        #vis type StateCallback = dyn Fn(#_field_change_struct_ident #ty_generics) + Send + Sync + 'static;
+        #vis type StateCallbackBox = Box<StateCallback>;
+
+        # [derive(Clone, Debug)]
+        #derive
+        #vis struct #_field_change_struct_ident #ty_generics {
+            pub state_cloned: #ty #ty_generics,
+            pub field_cloned: #_field_enum_ident #ty_generics
+        }        
+
         # [allow(non_camel_case_types)]
+        #derive
+        #vis trait #_field_notifiable_trait_ident #ty_generics
+            #where_clause
+        {
+            fn on_update(&self, field: #_field_enum_ident #ty_generics);   
+            fn subscribe(&self, action: StateCallbackBox) -> usize;
+            fn unsubscribe(&self, id: usize) -> bool;
+        }
+
+        # [allow(non_camel_case_types)]
+        # [derive(Clone, Debug)]
         #derive
         #vis enum #_field_enum_ident #ty_generics
             #where_clause
         {
             #(#_field_enum_var),*
         }
+
         impl #impl_generics #_field_enum_ident #ty_generics
             #where_clause
         {
@@ -79,9 +99,12 @@ pub fn derive_field(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
             #where_clause
         {
             pub fn update_field(&mut self, field: #_field_enum_ident #ty_generics){
-                match field {
+                
+                match field.clone() {
                     #(#_update_branch),*
                 }
+
+                self.on_update(field)
             }
             pub fn fetch_field(&mut self, field: &'static str) -> Option<#_field_enum_ident #ty_generics> {
                 match field {
