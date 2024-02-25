@@ -1,3 +1,6 @@
+use proc_macro2::{Ident, Span};
+use quote::{quote, ToTokens};
+use syn::{Attribute, DeriveInput, Fields, Meta, NestedMeta, Type, Visibility};
 
 #[proc_macro_derive(StructField, attributes(struct_field))]
 pub fn derive_field(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
